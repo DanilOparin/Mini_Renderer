@@ -1,0 +1,100 @@
+#pragma once
+#include "pch.h"
+
+#include "RenderDataTypes.h"
+
+#include "DirectX12/DXGI/DXGISwapChain.h"
+
+#include "DirectX12/Base/D12Device.h"
+#include "DirectX12/Commands/D12CommandQueue.h"
+#include "DirectX12/Commands/D12CommandList.h"
+#include "DirectX12/Resource/D12Resource.h"
+
+#include "DirectX12/Pipeline/D12PipelineState.h"
+#include "DirectX12/Descriptors/D12DescriptorHeap.h"
+#include "DirectX12/MemoryManagement/BufferUploader.h"
+
+#include "../ModelLoading/ModelLoaderApi.h"
+
+
+namespace Engine {
+
+	class YT_API RenderAPI
+	{
+
+	public:
+		RenderAPI() = default;
+		~RenderAPI();
+
+		void Initialize(HWND hwnd, const UINT width, const UINT height);
+
+		void UpdateDraw(const float ts);
+
+		void Release();
+
+	private:
+		ModelLoaderApi mModelLoader;
+	private:
+		D12Device mDevice;
+		D12CommandQueue mCommandQueue;
+		D12CommandList mCommandList;
+		DXGISwapChain mSwapChain;
+
+		D3D12_VIEWPORT mViewport[2];
+		D3D12_RECT mSRRect[2];
+
+		//old pipelinestuff
+		//D12PipelineState mBasePipeline;
+		//D12PipelineState mPlanarShadowPipeline;
+		
+		//new deferred stuff
+		D12PipelineState mDeferredPipeline;
+		D12PipelineState mDeferredPixelPipeline;
+		D12DescriptorHeap mDeferredRenderTargetsDescHeap;
+		D12Resource mDeferredOutputTextures[3];
+		
+		D12PipelineState mShadowMapPipeline;
+
+
+		D12DescriptorHeap mCBSRVUAVDescHeap;
+		D12Resource mDepthBuffers[2];
+		D12DescriptorHeap mDepthDescHeap;
+		
+
+
+		BufferUploader mBufferUploader;
+
+		D3D12_VERTEX_BUFFER_VIEW mVBView;
+		D3D12_INDEX_BUFFER_VIEW mIBView;
+
+		DirectX::XMMATRIX mViewProjectionMatrix;
+
+		//scene resources
+		D12Resource mVertexBuffer;
+		D12Resource mIndexBuffer;
+		std::vector<D12Resource> mMaterialBuffers;
+		std::vector<D12Resource> mTextureBuffers;
+		std::vector<D12Resource> mObjTransforms;
+
+		std::vector<Render::ObjectData> mObjTransformsCPU;
+
+		//std::vector<D12Resource> mShadowTransforms;
+
+		D12Resource mCBPassData;
+		Render::Light mLights[8];
+
+		std::vector<Render::MeshDrawData> mMeshes;
+
+	private: 
+		UINT mWidth = 0;
+		UINT mHeight = 0;
+
+	private:
+		float mLightCycle = 0.5f; //this ranges from 0.0 - 1.0f
+
+	private: //temp testvars
+		UINT mCurentidx = 0;
+	};
+}
+
+

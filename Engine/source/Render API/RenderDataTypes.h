@@ -1,0 +1,54 @@
+#pragma once
+#include "pch.h"
+
+
+namespace Engine {
+
+
+	namespace Render {
+
+		struct Light {
+			DirectX::XMFLOAT3 position = { 0.0f,0.0f,0.0f };
+			float strength = 0.0f;
+			DirectX::XMFLOAT3 direction = { 0.0f,0.0f,0.0f };
+			float padding = 0.0;
+		};
+
+
+		struct MeshDrawData {
+			UINT32 vertexcount = 0;
+			UINT32 vertexoffset = 0;
+			UINT32 indexcount = 0;
+			UINT32 indexoffset = 0;
+			std::vector<DirectX::XMFLOAT2> uv;
+
+		};
+
+		struct Vertex {
+			DirectX::XMFLOAT3 position = { 0.0f,0.0f,0.0f };
+			DirectX::XMFLOAT3 normal = { 0.0f,0.0f,0.0f };
+			DirectX::XMFLOAT2 uv = { 0.0f, 0.0f };
+			//DirectX::XMFLOAT4 color = { 0.0f,1.0f,0.0f,1.0f };
+
+		};
+
+
+		struct MaterialCelShader {
+			DirectX::XMFLOAT4 diffuseAlbedo = { 0.0f,0.0f,0.0f,1.0f };
+		};
+
+
+		struct ObjectData {
+			DirectX::XMMATRIX transform = DirectX::XMMatrixIdentity();
+		};
+
+		struct PassData {
+			DirectX::XMMATRIX viewproject = DirectX::XMMatrixIdentity();
+			DirectX::XMMATRIX lightviewproject = DirectX::XMMatrixIdentity();
+			Light scenelight;
+		};
+
+
+	}
+
+}

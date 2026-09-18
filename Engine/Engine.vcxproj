@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{4eff0f8b-0679-4133-bef1-ec473a44ac58}</ProjectGuid>
+    <RootNamespace>Engine</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;ENGINE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>C:\Program Files\Autodesk\FBX\FBX SDK\2020.3.9\include;$(ProjectDir)\source</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+      <AdditionalLibraryDirectories>C:\Program Files\Autodesk\FBX\FBX SDK\2020.3.9\lib\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies); libfbxsdk-md.lib;  libxml2-md.lib; zlib-md.lib;  wininet.lib;</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBCMT</IgnoreSpecificDefaultLibraries>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;ENGINE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>G:\libraries\FBX\2020.3.7\include;$(ProjectDir)\source</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableUAC>false</EnableUAC>
+      <AdditionalLibraryDirectories>G:\libraries\FBX\2020.3.7\lib\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies); libfbxsdk-md.lib;  libxml2-md.lib; zlib-md.lib; </AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="source\ModelLoading\ModelLoaderApi.h" />
+    <ClInclude Include="source\Render API\DirectX12\MemoryManagement\BufferUploader.h" />
+    <ClInclude Include="source\Render API\DirectX12\Descriptors\D12DescriptorHeap.h" />
+    <ClInclude Include="source\Render API\DirectX12\Pipeline\D12PipelineState.h" />
+    <ClInclude Include="source\Render API\DirectX12\Pipeline\D12RootSignature.h" />
+    <ClInclude Include="source\Render API\DirectX12\Pipeline\HLSLShader.h" />
+    <ClInclude Include="source\Render API\DirectX12\Resource\D12Resource.h" />
+    <ClInclude Include="source\EngineSettings.h" />
+    <ClInclude Include="source\Render API\DirectX12\DXGI\DXGISwapChain.h" />
+    <ClInclude Include="source\Render API\DirectX12\Commands\D12CommandList.h" />
+    <ClInclude Include="source\Render API\DirectX12\Commands\D12CommandQueue.h" />
+    <ClInclude Include="source\Render API\DirectX12\Debug\DXGIDebug.h" />
+    <ClInclude Include="source\Render API\DirectX12\Debug\D12Debug.h" />
+    <ClInclude Include="source\Render API\DirectX12\Base\D12Device.h" />
+    <ClInclude Include="source\Render API\DirectX12\DXGI\DXGIAdapter.h" />
+    <ClInclude Include="source\Helper.h" />
+    <ClInclude Include="source\Render API\DirectX12\DXGI\DXGIFactory.h" />
+    <ClInclude Include="source\Render API\RenderAPI.h" />
+    <ClInclude Include="source\Application.h" />
+    <ClInclude Include="source\EngineMin.h" />
+    <ClInclude Include="source\pch.h" />
+    <ClInclude Include="source\Render API\RenderDataTypes.h" />
+    <ClInclude Include="source\System\Timers\TimeStep.h" />
+    <ClInclude Include="source\ThirdParty\stb_image.h" />
+    <ClInclude Include="source\Utilities\Utilities.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="source\ModelLoading\ModelLoaderApi.cpp" />
+    <ClCompile Include="source\Render API\DirectX12\MemoryManagement\BufferUploader.cpp" />
+    <ClCompile Include="source\Render API\DirectX12\Descriptors\D12DescriptorHeap.cpp" />
+    <ClCompile Include="source\Render API\DirectX12\Pipeline\D12PipelineState.cpp" />
+    <ClCompile Include="source\Render API\DirectX12\Pipeline\D12RootSignature.cpp" />
+    <ClCompile Include="source\Render API\DirectX12\Pipeline\HLSLShader.cpp" />
+    <ClCompile Include="source\Render API\DirectX12\Resource\D12Resource.cpp" />
+    <ClCompile Include="source\Render API\DirectX12\DXGI\DXGISwapChain.cpp" />
+    <ClCompile Include="source\Render API\DirectX12\Commands\D12CommandList.cpp" />
+    <ClCompile Include="source\Render API\DirectX12\Commands\D12CommandQueue.cpp" />
+    <ClCompile Include="source\Render API\DirectX12\Debug\DXGIDebug.cpp" />
+    <ClCompile Include="source\Render API\DirectX12\Debug\D12Debug.cpp" />
+    <ClCompile Include="source\Render API\DirectX12\Base\D12Device.cpp" />
+    <ClCompile Include="source\Render API\DirectX12\DXGI\DXGIAdapter.cpp" />
+    <ClCompile Include="source\Render API\DirectX12\DXGI\DXGIFactory.cpp" />
+    <ClCompile Include="source\Render API\RenderAPI.cpp" />
+    <ClCompile Include="source\Application.cpp" />
+    <ClCompile Include="source\pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="source\System\Timers\TimeStep.cpp" />
+    <ClCompile Include="source\Utilities\Utilities.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
