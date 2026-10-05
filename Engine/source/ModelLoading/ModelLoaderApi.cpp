@@ -23,101 +23,89 @@ namespace Engine {
 		return FbxVector4();
 	}
 
-	bool CompareVertex(Render::Vertex& a, Render::Vertex& b) {
-		if (a.position.x == b.position.x && a.position.y == b.position.y && a.position.z == b.position.z) {
-			if (a.normal.x == b.normal.x && a.normal.y == b.normal.y && a.normal.z == b.normal.z) {
+	bool CompareVertex(Render::Vertex& a, Render::Vertex& b)
+	{
+		return
+			a.position.x == b.position.x &&
+			a.position.y == b.position.y &&
+			a.position.z == b.position.z &&
 
-				return true;
-			}
+			a.normal.x == b.normal.x &&
+			a.normal.y == b.normal.y &&
+			a.normal.z == b.normal.z &&
 
-		}
-		return false;
+			a.uv.x == b.uv.x &&
+			a.uv.y == b.uv.y;
 	}
 
-	DirectX::XMFLOAT2 GetVertUV(FbxMesh* pMesh, int lUVSetIndex, int lVertIndex, int lPolyIndex)
+	DirectX::XMFLOAT2 GetVertUV(FbxMesh* pMesh,int uvSetIndex,int vertIndex,int polyIndex)
 	{
-		//get all UV set names
-		FbxStringList lUVSetNameList;
-		pMesh->GetUVSetNames(lUVSetNameList);
+		FbxStringList uvSetNames;
+		pMesh->GetUVSetNames(uvSetNames);
 
-		//iterating over all uv sets
-		//for (int lUVSetIndex = 0; lUVSetIndex < lUVSetNameList.GetCount(); lUVSetIndex++)
-		//{
-			//get lUVSetIndex-th uv set
-			const char* lUVSetName = lUVSetNameList.GetStringAt(lUVSetIndex);
-			const FbxGeometryElementUV* lUVElement = pMesh->GetElementUV(lUVSetName);
+		if (uvSetNames.GetCount() == 0)
+			return { 0.0f, 0.0f };
 
-			if (!lUVElement)
-				return DirectX::XMFLOAT2(0.0f, 0.0f);
+		const char* uvSetName =
+			uvSetNames.GetStringAt(uvSetIndex);
 
-			// only support mapping mode eByPolygonVertex and eByControlPoint
-			if (lUVElement->GetMappingMode() != FbxGeometryElement::eByPolygonVertex &&
-				lUVElement->GetMappingMode() != FbxGeometryElement::eByControlPoint)
-				return DirectX::XMFLOAT2(0.0f, 0.0f);
+		const FbxGeometryElementUV* uvElement =
+			pMesh->GetElementUV(uvSetName);
 
-			//index array, where holds the index referenced to the uv data
-			const bool lUseIndex = lUVElement->GetReferenceMode() != FbxGeometryElement::eDirect;
-			const int lIndexCount = (lUseIndex) ? lUVElement->GetIndexArray().GetCount() : 0;
+		if (!uvElement)
+			return { 0.0f, 0.0f };
 
-			//iterating through the data by polygon
-			const int lPolyCount = pMesh->GetPolygonCount();
-			const int lPolySize = pMesh->GetPolygonSize(lPolyIndex);
+		FbxVector2 uv;
 
-			if (lUVElement->GetMappingMode() == FbxGeometryElement::eByControlPoint)
-			{
-				//for (int lPolyIndex = 0; lPolyIndex < lPolyCount; ++lPolyIndex)
-				//{
-					// build the max index array that we need to pass into MakePoly
-					
-					//for (int lVertIndex = 0; lVertIndex < lPolySize; ++lVertIndex)
-					//{
-						FbxVector2 lUVValue;
+		switch (uvElement->GetMappingMode())
+		{
+		case FbxGeometryElement::eByControlPoint:
+		{
+			int controlPointIndex =
+				pMesh->GetPolygonVertex(
+					polyIndex,
+					vertIndex);
 
-						//get the index of the current vertex in control points array
-						int lPolyVertIndex = pMesh->GetPolygonVertex(lPolyIndex, lVertIndex);
+			int uvIndex =
+				(uvElement->GetReferenceMode() ==
+					FbxGeometryElement::eDirect)
+				?
+				controlPointIndex
+				:
+				uvElement->GetIndexArray()
+				.GetAt(controlPointIndex);
 
-						//the UV index depends on the reference mode
-						int lUVIndex = lUseIndex ? lUVElement->GetIndexArray().GetAt(lPolyVertIndex) : lPolyVertIndex;
+			uv =
+				uvElement->GetDirectArray()
+				.GetAt(uvIndex);
 
-						lUVValue = lUVElement->GetDirectArray().GetAt(lUVIndex);
+			break;
+		}
 
-						return DirectX::XMFLOAT2(lUVValue[0], lUVValue[1]);
-						
+		case FbxGeometryElement::eByPolygonVertex:
+		{
+			FbxVector2 uvValue;
+			bool unmapped;
 
-						//User TODO:
-						//Print out the value of UV(lUVValue) or log it to a file
-					//}
-				//}
-			}
-			else if (lUVElement->GetMappingMode() == FbxGeometryElement::eByPolygonVertex)
-			{
-				//int lPolyIndexCounter = 0;
-				//for (int lPolyIndex = 0; lPolyIndex < lPolyCount; ++lPolyIndex)
-				//{
-					// build the max index array that we need to pass into MakePoly
-					//const int lPolySize = pMesh->GetPolygonSize(lPolyIndex);
-					//for (int lVertIndex = 0; lVertIndex < lPolySize; ++lVertIndex)
-					//{
-						//if (lPolyIndexCounter < lIndexCount)
-						//{
-							FbxVector2 lUVValue;
+			pMesh->GetPolygonVertexUV(
+				polyIndex,
+				vertIndex,
+				uvSetName,
+				uvValue,
+				unmapped);
 
-							//the UV index depends on the reference mode
-							int lUVIndex = lUseIndex ? lUVElement->GetIndexArray().GetAt(lPolyIndex) : lPolyIndex;
+			uv = uvValue;
 
-							lUVValue = lUVElement->GetDirectArray().GetAt(lUVIndex);
+			break;
+		}
 
-							return DirectX::XMFLOAT2(lUVValue[0], lUVValue[1]);
+		default:
+			return { 0.0f, 0.0f };
+		}
 
-							//User TODO:
-							//Print out the value of UV(lUVValue) or log it to a file
-
-							//lPolyIndexCounter++;
-						//}
-					//}
-				//}
-			}
-		//}
+		return DirectX::XMFLOAT2(
+			(float)uv[0],
+			1.0f - (float)uv[1]); // FBX -> DirectX
 	}
 
 
@@ -195,21 +183,20 @@ namespace Engine {
 
 					vertex.uv = GetVertUV(mesh, 0, facevtx, face);
 
+					std::cout
+						<< "Face: " << face
+						<< " Vert: " << facevtx
+						<< " UV: "
+						<< vertex.uv.x
+						<< " "
+						<< vertex.uv.y
+						<< std::endl;
 
-					const size_t meshvtxcnt = meshvertices.size();
-					size_t i = 0;
-					for (i = 0; i < meshvtxcnt; i++) {
-						if (CompareVertex(vertex, meshvertices[i])) {
-							break;
-						}
-					}
+					meshvertices.push_back(vertex);
 
-					if (i == meshvtxcnt) {
+					meshindices.push_back(
+						(UINT32)meshvertices.size() - 1);
 
-						meshvertices.emplace_back(vertex);
-					}
-
-					meshindices.push_back(i);
 					vtx++;
 				}
 			
@@ -249,50 +236,3 @@ namespace Engine {
 
 
 
-/* Create the vertices */
-
-/*
-for (int i = 0; i < mesh->GetControlPointsCount(); i++) {
-	const FbxVector4& position = mesh->GetControlPointAt(i);
-
-	//Render::Vertex vertex;
-	DirectX::XMFLOAT3 positiondx = { (float)position[0],(float)position[1],(float)position[2] };
-	verticespositions.emplace_back(positiondx);
-}
-
-*/
-/* Create indices and normals */
-/*
-for (int polygon = 0; polygon < mesh->GetPolygonCount(); polygon++) {
-	const int polygonsize = mesh->GetPolygonSize(polygon);
-
-	for (int polyvert = 0; polyvert < polygonsize; polyvert++) {
-
-		UINT32 idx = mesh->GetPolygonVertex(polygon, polyvert);
-
-		FbxGeometryElementNormal* ntest = mesh->GetElementNormal();
-
-		const auto data = ntest->GetDirectArray();
-
-		const auto mapping = ntest->GetMappingMode();
-		const auto refmode = ntest->GetReferenceMode();
-
-		//ntest->RemapIndexTo(FbxLayerElement::eByControlPoint);
-
-
-		indices.emplace_back(idx);
-
-		totalindices++;
-
-		const FbxVector4& normalvec4 = GetNormal(mesh->GetElementNormal(),idx);
-		//const FbxVector4& normalvec4 = GetNormal(ntest,idx);
-
-		DirectX::XMFLOAT3 normal = { (float)normalvec4[0],(float)normalvec4[1],(float)normalvec4[2] };
-
-		polygonnormals.emplace_back(normal);
-	}
-
-
-}
-
-*/

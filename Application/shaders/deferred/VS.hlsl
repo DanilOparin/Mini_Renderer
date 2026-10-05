@@ -4,7 +4,7 @@ struct VS_INPUT
 {
     float3 position : POSITION;
     float3 normal : NORMAL;
-    float2 uv : TEXCOORD0;
+    float2 uv : TEXCOORD;
     
 };
 
@@ -15,7 +15,7 @@ struct VS_OUTPUT
     float4 positionCS : SV_POSITION;
     float3 positionWS : POSITION0;
     float3 normal : NORMAL;
-    float2 uv : TEXCOORD0;
+    float2 uv : TEXCOORD;
 	
 };
 

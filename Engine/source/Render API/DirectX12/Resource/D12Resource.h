@@ -20,9 +20,9 @@ namespace Engine {
 
 		void InitializeAsDepthBuffer(ID3D12Device* pDevice, const unsigned int width, const unsigned int height, const DXGI_FORMAT format = DXGI_FORMAT_D24_UNORM_S8_UINT);
 
-		void InitializeAsRenderTarget(ID3D12Device* pDevice, const unsigned int width, const unsigned int height, const DXGI_FORMAT format, const D3D12_RESOURCE_DIMENSION dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D);
+		void InitializeAsRenderTarget(ID3D12Device* pDevice, const unsigned int width, const unsigned int height, const DXGI_FORMAT format);
 		
-		void InitializeAsTexture(ID3D12Device* pDevice, const unsigned int width, const unsigned int height, const DXGI_FORMAT format, const D3D12_RESOURCE_DIMENSION dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D);
+		void InitializeAsTexture(ID3D12Device* pDevice, const unsigned int width, const unsigned int height, const DXGI_FORMAT format);
 
 		void Release();
 		void* GetCPUMemory();

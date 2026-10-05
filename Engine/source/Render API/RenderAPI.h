@@ -63,6 +63,7 @@ namespace Engine {
 
 
 		BufferUploader mBufferUploader;
+		BufferUploader mTextureUploader;
 
 		D3D12_VERTEX_BUFFER_VIEW mVBView;
 		D3D12_INDEX_BUFFER_VIEW mIBView;

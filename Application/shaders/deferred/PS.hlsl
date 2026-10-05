@@ -4,7 +4,7 @@ struct VS_OUTPUT
     float4 positionCS : SV_POSITION;
     float3 positionWS : POSITION0;
     float3 normal : NORMAL;
-    float2 uv : TEXCOORD0;
+    float2 uv : TEXCOORD;
 	
 };
 
@@ -37,7 +37,10 @@ PS_OUTPUT main(VS_OUTPUT input)
     output.normal = float4(input.normal, 1.0f);
     
     
-    output.color = BrickTexture.Sample(sLinearClamp, input.uv) * gMaterialData.diffuseAlbedo;
+    output.color =
+BrickTexture.Sample(
+sLinearClamp,
+input.uv);
     
  
     return output;

@@ -62,7 +62,7 @@ namespace Engine {
 		YT_EVAL_HR(pDevice->CreateCommittedResource(&heapProp, D3D12_HEAP_FLAG_NONE, &resourceDesc, initialState, 0, IID_PPV_ARGS(GetAddressOf())), "Error creating a resource");
 	}
 
-	void D12Resource::InitializeAsRenderTarget(ID3D12Device* pDevice, const unsigned int width, const unsigned int height, const DXGI_FORMAT format, const D3D12_RESOURCE_DIMENSION dimension)
+	void D12Resource::InitializeAsRenderTarget(ID3D12Device* pDevice, const unsigned int width, const unsigned int height, const DXGI_FORMAT format)
 	{
 		D3D12_HEAP_PROPERTIES heapProp = {};
 		heapProp.Type = D3D12_HEAP_TYPE_DEFAULT;
@@ -144,7 +144,7 @@ namespace Engine {
 
 		YT_EVAL_HR(pDevice->CreateCommittedResource(&heapProp, D3D12_HEAP_FLAG_NONE, &resDesc, D3D12_RESOURCE_STATE_DEPTH_WRITE, &clearValue,IID_PPV_ARGS(GetAddressOf())), "Error creating depth buffer");
 	}
-	void D12Resource::InitializeAsTexture(ID3D12Device* pDevice, const unsigned int width, const unsigned int height, const DXGI_FORMAT format, const D3D12_RESOURCE_DIMENSION dimension)
+	void D12Resource::InitializeAsTexture(ID3D12Device* pDevice, const unsigned int width, const unsigned int height, const DXGI_FORMAT format)
 	{
 		D3D12_HEAP_PROPERTIES heapProp = {};
 		heapProp.Type = D3D12_HEAP_TYPE_DEFAULT;

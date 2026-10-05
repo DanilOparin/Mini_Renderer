@@ -11,6 +11,6 @@ int main() {
 			engineApp.Update();
 		}
 	}
-	
+	std::cin.get();
 
 }

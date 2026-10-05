@@ -19,6 +19,7 @@
 
 
 
+
 namespace Engine {
 	using namespace Render;
 
@@ -26,7 +27,7 @@ namespace Engine {
 	RenderAPI::~RenderAPI()
 	{
 
-		/* TODO IMPROVE RELEASE FUNCTION TO CLEAN UP OBJECTS */
+		
 		Release();
 	}
 
@@ -61,6 +62,7 @@ namespace Engine {
 
 			mSwapChain.Initialize(mDevice.Get(), factory.Get(), mCommandQueue.Get(), hwnd, mWidth, mHeight);
 			mBufferUploader.Initialize(mDevice.Get(), MBs(32));
+			mTextureUploader.Initialize(mDevice.Get(), MBs(32));
 
 		}
 
@@ -69,7 +71,7 @@ namespace Engine {
 			std::vector<Vertex> vertices;
 			std::vector<UINT32> indices;
 
-			mModelLoader.LoadFBXModel("models/Monkey.fbx", vertices, indices, mMeshes);
+			mModelLoader.LoadFBXModel("models/Cube.fbx", vertices, indices, mMeshes);
 
 
 			mVertexBuffer.Initialize(mDevice.Get(), MBs(64), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON);
@@ -104,7 +106,7 @@ namespace Engine {
 			mDepthDescHeap->SetName(L"Depth descriptor heap");
 
 		}
-
+		
 		/* deferred pipeline stuff */
 		{
 			mDeferredPipeline.InitializeDeferred(mDevice.Get());
@@ -151,9 +153,7 @@ namespace Engine {
 
 
 
-		/* old stuff, will be removed */
-		//mBasePipeline.Initialize(mDevice.Get());
-		//mPlanarShadowPipeline.InitializeAsTransparent(mDevice.Get());
+		
 
 		/* DEPTH BUFFERS */
 		{
@@ -273,50 +273,12 @@ namespace Engine {
 			mMaterialBuffers[0]->SetName(L"Material CB 1 skeleton");
 
 			MaterialCelShader material;
-			material.diffuseAlbedo = { .45f,0.0f,0.0f,1.0f };
+			material.diffuseAlbedo = { 1.0f,1.0f,1.0f,1.0f };
 
 			mBufferUploader.Upload((D12Resource*)mMaterialBuffers[0].GetAddressOf(), &material, sizeof(MaterialCelShader),
 				(D12CommandList*)mCommandList.GetAddressOf(), (D12CommandQueue*)mCommandQueue.GetAddressOf(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
-			mMaterialBuffers.emplace_back(D12Resource());
-			mMaterialBuffers[1].Initialize(mDevice.Get(), Utils::CalculateConstantbufferAlignment(sizeof(MaterialCelShader)), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON);
-			mMaterialBuffers[1]->SetName(L"Material CB text");
-
-			//material.diffuseAlbedo = { .55f,0.0f,0.015f,1.0f };
 			
-			//material.diffuseAlbedo = { .8,0.8f,0.8f,1.0f };
-			material.diffuseAlbedo = { .10,0.17f,0.0f,1.0f };
-			
-
-			mBufferUploader.Upload((D12Resource*)mMaterialBuffers[1].GetAddressOf(), &material, sizeof(MaterialCelShader),
-				(D12CommandList*)mCommandList.GetAddressOf(), (D12CommandQueue*)mCommandQueue.GetAddressOf(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-
-
-			mMaterialBuffers.emplace_back(D12Resource());
-			mMaterialBuffers[2].Initialize(mDevice.Get(), Utils::CalculateConstantbufferAlignment(sizeof(MaterialCelShader)), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON);
-			mMaterialBuffers[2]->SetName(L"Material CB 3 (floor)");
-
-			//material.diffuseAlbedo = { .6f,0.3f,0.0f,1.0f };
-			material.diffuseAlbedo = { .05f,0.05f,0.05f,1.0f };
-
-			mBufferUploader.Upload((D12Resource*)mMaterialBuffers[2].GetAddressOf(), &material, sizeof(MaterialCelShader),
-				(D12CommandList*)mCommandList.GetAddressOf(), (D12CommandQueue*)mCommandQueue.GetAddressOf(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-
-			mMaterialBuffers.emplace_back(D12Resource());
-			mMaterialBuffers[3].Initialize(mDevice.Get(), Utils::CalculateConstantbufferAlignment(sizeof(MaterialCelShader)), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON);
-			mMaterialBuffers[3]->SetName(L"Material CB 4 (other object)");
-			
-			
-			material.diffuseAlbedo = { 0.33f,0.0f,0.19f,1.0f };
-			material.diffuseAlbedo = { 0.24f,0.0f,0.10f,1.0f };
-			
-			//material.diffuseAlbedo = { .0f,0.0f,0.80f,1.0f };
-			//material.diffuseAlbedo = { 0.7f,0.3f,0.1f,1.0f };
-
-			mBufferUploader.Upload((D12Resource*)mMaterialBuffers[3].GetAddressOf(), &material, sizeof(MaterialCelShader),
-				(D12CommandList*)mCommandList.GetAddressOf(), (D12CommandQueue*)mCommandQueue.GetAddressOf(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-
-
 
 		}
 
@@ -342,54 +304,7 @@ namespace Engine {
 
 			memcpy(mObjTransforms[0].GetCPUMemory(), &tempData, sizeof(ObjectData));
 
-			mObjTransforms.emplace_back(D12Resource());
-			mObjTransforms[1].Initialize(mDevice.Get(), Utils::CalculateConstantbufferAlignment(sizeof(ObjectData)), D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
-			mObjTransforms[1]->SetName(L"Transform 2 text");
-
-			scale = DirectX::XMMatrixScaling(3.0, 3.0f, 1.5f);
-			//rotation = DirectX::XMMatrixRotationAxis({ 0.0f,1.0f,0.0f }, 3.14f);
-			translation = DirectX::XMMatrixTranslation(0.0f, 0.0f, -12.0f);
-
-
-			tempData.transform = scale * translation;
-
-			mObjTransformsCPU.push_back(tempData);
-
-			memcpy(mObjTransforms[1].GetCPUMemory(), &tempData, sizeof(ObjectData));
-
-			mObjTransforms.emplace_back(D12Resource());
-			mObjTransforms[2].Initialize(mDevice.Get(), Utils::CalculateConstantbufferAlignment(sizeof(ObjectData)), D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
-			mObjTransforms[2]->SetName(L"Transform 3 CB (floor)");
-
-			tempData.transform = DirectX::XMMatrixIdentity();
-
-			tempData.transform.r[0] = { 1000.0f,0.0,0.0,0.0f };
-			tempData.transform.r[1] = { 0.0,1.0f,0.0,0.0f };
-			tempData.transform.r[2] = { 0.0,0.0,1000.0f,0.0f };
-			tempData.transform.r[3] = { 0.0f,-1.0f,0.0f,1.0f };
-
-			mObjTransformsCPU.push_back(tempData);
-
-			memcpy(mObjTransforms[2].GetCPUMemory(), &tempData, sizeof(ObjectData));
-
-
-
-			mObjTransforms.emplace_back(D12Resource());
-			mObjTransforms[3].Initialize(mDevice.Get(), Utils::CalculateConstantbufferAlignment(sizeof(ObjectData)), D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
-			mObjTransforms[3]->SetName(L"Transform 3 CB (desk)");
-
-			scale = DirectX::XMMatrixScaling(.03, 0.03f, 0.03f);
-			rotation = DirectX::XMMatrixRotationAxis({ 1.0f,0.0f,0.0f }, 4.71f);
-			DirectX::XMMATRIX rotation2 = DirectX::XMMatrixRotationAxis({ 0.0f,1.0f,0.0f }, 2.34f);
-
-			rotation = rotation * rotation2;
-			translation = DirectX::XMMatrixTranslation(-9.0f, 0.35f, -5.0f);
-			tempData.transform = scale * rotation * translation;
-
-			mObjTransformsCPU.push_back(tempData);
-
-			memcpy(mObjTransforms[3].GetCPUMemory(), &tempData, sizeof(ObjectData));
-
+			
 
 		}
 
@@ -419,15 +334,17 @@ namespace Engine {
 		}
 
 		{
+
+			
 			int x, y, comp;
-			const stbi_uc* texture = stbi_load("C:/Users/Admin/Desktop/DirectX12Tutorial-main/Application/Textures/Brick.jpg", &x, &y, &comp, 4);
-			std::cout << "x:" << x << "y" << y;
+			const stbi_uc* texture = stbi_load("Textures/Brick.jpg", &x, &y, &comp, 4);
+			std::cout << "x:" << x << "y" << y<<std::endl;
 
 			mTextureBuffers.emplace_back(D12Resource());
-			mTextureBuffers[0].InitializeAsTexture(mDevice.Get(), x, y, DXGI_FORMAT_R8G8B8A8_UNORM, D3D12_RESOURCE_DIMENSION_BUFFER);
+			mTextureBuffers[0].InitializeAsTexture(mDevice.Get(), x, y, DXGI_FORMAT_R8G8B8A8_UNORM);
 			mTextureBuffers[0]->SetName(L"BrickTexture");
 
-			mBufferUploader.UploadTexture();
+			mTextureUploader.UploadTexture(mDevice.Get(), (D12CommandList*)mCommandList.GetAddressOf(), (D12CommandQueue*)mCommandQueue.GetAddressOf(), (D12Resource*)mTextureBuffers[0].GetAddressOf(), (void*)texture, x, y);
 
 			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 			srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -435,7 +352,10 @@ namespace Engine {
 			srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 			srvDesc.Texture2D.MipLevels = 1;
 			mDevice->CreateShaderResourceView(mTextureBuffers[0].Get(), &srvDesc, mCBSRVUAVDescHeap.GetCPUHandle(5));
+			auto desc =
+				mTextureBuffers[0]->GetDesc();
 
+			std::cout << desc.Dimension << std::endl;
 			stbi_image_free((void*)texture);
 		}
 
@@ -503,62 +423,43 @@ namespace Engine {
 		ID3D12DescriptorHeap* descriptorheaps[1] = { mCBSRVUAVDescHeap.Get() };
 		mCommandList.GFXCmd()->SetDescriptorHeaps(1, descriptorheaps);
 
-		//Draw to shadowmap
-		{
+		////Draw to shadowmap
+		//{
 
-			mCommandList.GFXCmd()->RSSetViewports(1, &mViewport[1]);
-			mCommandList.GFXCmd()->RSSetScissorRects(1, &mSRRect[1]);
-
-
-			mCommandList.GFXCmd()->SetGraphicsRootSignature(mShadowMapPipeline.GetRS());
-			mCommandList.GFXCmd()->SetPipelineState(mShadowMapPipeline.Get());
-			mCommandList.GFXCmd()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			mCommandList.GFXCmd()->IASetVertexBuffers(0, 1, &mVBView);
-			mCommandList.GFXCmd()->IASetIndexBuffer(&mIBView);
-
-			/* clear depth buffer for the shadowmap */
-			{
-
-				D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = mDepthDescHeap.GetCPUHandle(1); //shadow map depth buffer here
-			
-				mCommandList.GFXCmd()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, 0);
-				mCommandList.GFXCmd()->OMSetRenderTargets(0, nullptr, false, &dsvHandle);				
-			}
-
-			mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(0, mCBPassData.Get()->GetGPUVirtualAddress());
-			//skeleton
-			{
-				mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(1, mObjTransforms[0].Get()->GetGPUVirtualAddress());
-				mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(2, mMaterialBuffers[0].Get()->GetGPUVirtualAddress());
-
-				Render::MeshDrawData* drawdata = &mMeshes[0];
-
-				mCommandList.GFXCmd()->DrawIndexedInstanced(drawdata->indexcount, 1, drawdata->indexoffset, drawdata->vertexoffset, 0);
-			}
-			//text
-			//{
-			//	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(1, mObjTransforms[1].Get()->GetGPUVirtualAddress());
-			//	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(2, mMaterialBuffers[1].Get()->GetGPUVirtualAddress());
-
-			//	Render::MeshDrawData* drawdata = &mMeshes[3];
-
-			//	mCommandList.GFXCmd()->DrawIndexedInstanced(drawdata->indexcount, 1, drawdata->indexoffset, drawdata->vertexoffset, 0);
-			//}
+		//	mCommandList.GFXCmd()->RSSetViewports(1, &mViewport[1]);
+		//	mCommandList.GFXCmd()->RSSetScissorRects(1, &mSRRect[1]);
 
 
-			////cupboard
-			//{
-			//	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(1, mObjTransforms[3].Get()->GetGPUVirtualAddress());
-			//	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(2, mMaterialBuffers[3].Get()->GetGPUVirtualAddress());
+		//	mCommandList.GFXCmd()->SetGraphicsRootSignature(mShadowMapPipeline.GetRS());
+		//	mCommandList.GFXCmd()->SetPipelineState(mShadowMapPipeline.Get());
+		//	mCommandList.GFXCmd()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		//	mCommandList.GFXCmd()->IASetVertexBuffers(0, 1, &mVBView);
+		//	mCommandList.GFXCmd()->IASetIndexBuffer(&mIBView);
 
-			//	Render::MeshDrawData* drawdata = &mMeshes[2];
+		//	/* clear depth buffer for the shadowmap */
+		//	{
 
-			//	mCommandList.GFXCmd()->DrawIndexedInstanced(drawdata->indexcount, 1, drawdata->indexoffset, drawdata->vertexoffset, 0);
-			//}
+		//		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = mDepthDescHeap.GetCPUHandle(1); //shadow map depth buffer here
+		//	
+		//		mCommandList.GFXCmd()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, 0);
+		//		mCommandList.GFXCmd()->OMSetRenderTargets(0, nullptr, false, &dsvHandle);				
+		//	}
+
+		//	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(0, mCBPassData.Get()->GetGPUVirtualAddress());
+		//	//skeleton
+		//	{
+		//		mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(1, mObjTransforms[0].Get()->GetGPUVirtualAddress());
+		//		mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(2, mMaterialBuffers[0].Get()->GetGPUVirtualAddress());
+
+		//		Render::MeshDrawData* drawdata = &mMeshes[0];
+
+		//		mCommandList.GFXCmd()->DrawIndexedInstanced(drawdata->indexcount, 1, drawdata->indexoffset, drawdata->vertexoffset, 0);
+		//	}
+		
 
 
 
-		}
+		//}
 
 		//Draw frame
 		{
@@ -593,7 +494,7 @@ namespace Engine {
 
 
 
-			//floor 
+			
 			{
 
 				mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(1, mObjTransforms[0].Get()->GetGPUVirtualAddress());
@@ -605,35 +506,7 @@ namespace Engine {
 
 			}
 
-			//skeleton
-			//{
-			//	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(1, mObjTransforms[0].Get()->GetGPUVirtualAddress());
-			//	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(2, mMaterialBuffers[0].Get()->GetGPUVirtualAddress());
-
-			//	Render::MeshDrawData* drawdata = &mMeshes[1];
-
-			//	mCommandList.GFXCmd()->DrawIndexedInstanced(drawdata->indexcount, 1, drawdata->indexoffset, drawdata->vertexoffset, 0);
-			//}
-			////text
-			//{
-			//	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(1, mObjTransforms[1].Get()->GetGPUVirtualAddress());
-			//	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(2, mMaterialBuffers[1].Get()->GetGPUVirtualAddress());
-
-			//	Render::MeshDrawData* drawdata = &mMeshes[3];
-
-			//	mCommandList.GFXCmd()->DrawIndexedInstanced(drawdata->indexcount, 1, drawdata->indexoffset, drawdata->vertexoffset, 0);
-			//}
-
-
-			//cupboard
-			/*{
-				mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(1, mObjTransforms[3].Get()->GetGPUVirtualAddress());
-				mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(2, mMaterialBuffers[3].Get()->GetGPUVirtualAddress());
-
-				Render::MeshDrawData* drawdata = &mMeshes[2];
-
-				mCommandList.GFXCmd()->DrawIndexedInstanced(drawdata->indexcount, 1, drawdata->indexoffset, drawdata->vertexoffset, 0);
-			}*/
+			
 
 		
 			D3D12_RESOURCE_BARRIER barrier = {};
@@ -673,7 +546,7 @@ namespace Engine {
 
 			unsigned int size[2] = { 1280,720 };
 
-			//mCommandList.GFXCmd()->SetComputeRoot32BitConstants(4, 2, &size, 0);
+			
 
 
 			mCommandList.GFXCmd()->DrawIndexedInstanced(3, 1, 0, 0, 0);
@@ -730,19 +603,35 @@ namespace Engine {
 			mObjTransforms[i].Release();
 		}
 
-		
+		for (D12Resource& resource: mTextureBuffers)
+		{
+			resource.Release();
+		}
+
+		for(D12Resource& resource: mDeferredOutputTextures)
+		{
+			resource.Release();
+		}
 
 		mVertexBuffer.Release();
 		mIndexBuffer.Release();
 		mCBPassData.Release();
 
-		//mBasePipeline.Release();
-		//mPlanarShadowPipeline.Release();
+		mDeferredPipeline.Release();
+		mDeferredPixelPipeline.Release();
+		mShadowMapPipeline.Release();
+
+
+		mDeferredRenderTargetsDescHeap.Release();
+		mCBSRVUAVDescHeap.Release();
 		mDepthDescHeap.Release();
+
+
 		mDepthBuffers[0].Release();
 		mDepthBuffers[1].Release();
 
 		mBufferUploader.Release();
+		mTextureUploader.Release();
 	
 		mSwapChain.Release();
 		
@@ -763,318 +652,3 @@ namespace Engine {
 
 
 
-//memcpy((BYTE*)mCBPassData.GetCPUMemory() + sizeof(PassData::viewproject)*2, &currentFrameLights, sizeof(Light));
-
-/*
-DirectX::XMVECTOR planeToCastShadow = { 0.0f,1.0f,0.0f,0.0f };
-DirectX::XMVECTOR dirToLightSource = DirectX::XMVectorNegate(DirectX::XMLoadFloat3(&currentFrameLights.direction));
-
-DirectX::XMMATRIX shadowMatrix = DirectX::XMMatrixShadow(planeToCastShadow, dirToLightSource);
-DirectX::XMMATRIX translation = DirectX::XMMatrixTranslation(0.0f, 0.001f, 0.0f);
-
-
-for (int i = 0; i < mShadowTransforms.size(); i++) {
-	ObjectData tempData;
-	tempData.transform = mObjTransformsCPU[i].transform * shadowMatrix * translation;
-	memcpy(mShadowTransforms[i].GetCPUMemory(), &tempData, sizeof(ObjectData));
-
-}
-*/
-
-
-/*
-
-mCommandList.GFXCmd()->SetGraphicsRootSignature(mBasePipeline.GetRS());
-mCommandList.GFXCmd()->SetPipelineState(mBasePipeline.Get());
-mCommandList.GFXCmd()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-mCommandList.GFXCmd()->IASetVertexBuffers(0, 1, &mVBView);
-mCommandList.GFXCmd()->IASetIndexBuffer(&mIBView);
-mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(0, mCBPassData.Get()->GetGPUVirtualAddress());
-
-*/
-//Draw call
-
-/*
-{
-
-	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(1, mObjTransforms[0].Get()->GetGPUVirtualAddress());
-	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(2, mMaterialBuffers[0].Get()->GetGPUVirtualAddress());
-
-	Render::MeshDrawData* drawdata = &mMeshes[0];
-
-	mCommandList.GFXCmd()->DrawIndexedInstanced(drawdata->indexcount, 1, drawdata->indexoffset, drawdata->vertexoffset, 0);
-
-}
-
-
-{
-
-	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(1, mObjTransforms[1].Get()->GetGPUVirtualAddress());
-	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(2, mMaterialBuffers[1].Get()->GetGPUVirtualAddress());
-
-	Render::MeshDrawData* drawdata = &mMeshes[1];
-
-	mCommandList.GFXCmd()->DrawIndexedInstanced(drawdata->indexcount, 1, drawdata->indexoffset, drawdata->vertexoffset, 0);
-
-}
-
-//draw a floor
-{
-
-	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(1, mObjTransforms[2].Get()->GetGPUVirtualAddress());
-	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(2, mMaterialBuffers[2].Get()->GetGPUVirtualAddress());
-
-	Render::MeshDrawData* drawdata = &mMeshes[2];
-
-	mCommandList.GFXCmd()->DrawIndexedInstanced(drawdata->indexcount, 1, drawdata->indexoffset, drawdata->vertexoffset, 0);
-
-}
-
-mCommandList.GFXCmd()->SetPipelineState(mPlanarShadowPipeline.Get());
-mCommandList.GFXCmd()->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-
-//Draw call
-{
-
-	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(1, mShadowTransforms[0].Get()->GetGPUVirtualAddress());
-	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(2, mMaterialBuffers[3].Get()->GetGPUVirtualAddress());
-
-	Render::MeshDrawData* drawdata = &mMeshes[0];
-
-	//mCommandList.GFXCmd()->DrawIndexedInstanced(drawdata->indexcount, 1, drawdata->indexoffset, drawdata->vertexoffset, 0);
-
-}
-
-
-{
-
-	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(1, mShadowTransforms[1].Get()->GetGPUVirtualAddress());
-	mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(2, mMaterialBuffers[3].Get()->GetGPUVirtualAddress());
-
-	Render::MeshDrawData* drawdata = &mMeshes[0];
-
-	//mCommandList.GFXCmd()->DrawIndexedInstanced(drawdata->indexcount, 1, drawdata->indexoffset, drawdata->vertexoffset, 0);
-
-}
-
-*/
-
-/*
-#define G_INDICES 36
-
-		UINT32 indicies[G_INDICES];
-		//ib: 0,1,2, 3,4,5 6,7,8 9,10,11 12,13,14 15,16,17
-
-		indicies[0] = 0;
-		indicies[1] = 1;
-		indicies[2] = 2;
-
-		indicies[3] = 3;
-		indicies[4] = 4;
-		indicies[5] = 5;
-
-		indicies[6] = 6;
-		indicies[7] = 7;
-		indicies[8] = 8;
-
-		indicies[9] = 9;
-		indicies[10] = 10;
-		indicies[11] = 11;
-
-		indicies[12] = 12;
-		indicies[13] = 13;
-		indicies[14] = 14;
-
-		indicies[15] = 15;
-		indicies[16] = 16;
-		indicies[17] = 17;
-
-		indicies[18] = 1;
-		indicies[19] = 18;
-		indicies[20] = 2;
-
-		indicies[21] = 4;
-		indicies[22] = 19;
-		indicies[23] = 5;
-
-		indicies[24] = 7;
-		indicies[25] = 20;
-		indicies[26] = 8;
-
-		indicies[27] = 10;
-		indicies[28] = 21;
-		indicies[29] = 11;
-
-		indicies[30] = 13;
-		indicies[31] = 22;
-		indicies[32] = 14;
-
-		indicies[33] = 16;
-		indicies[34] = 23;
-		indicies[35] = 17;
-
-		mIndexBuffer.Initialize(mDevice.Get(), KBs(16), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON);
-		mIndexBuffer->SetName(L"Index buffer");
-
-
-
-		mBufferUploader.Upload((D12Resource*)mIndexBuffer.GetAddressOf(), indicies, sizeof(UINT32)* G_INDICES,
-			(D12CommandList*)mCommandList.GetAddressOf(), (D12CommandQueue*)mCommandQueue.GetAddressOf());
-					mIBView.BufferLocation = mIndexBuffer.Get()->GetGPUVirtualAddress();
-		mIBView.Format = DXGI_FORMAT_R32_UINT;
-		mIBView.SizeInBytes = KBs(16);
-
-			*/
-/*
-		*
-		#define G_BOX_VERTICES 24#define G_BOX_VERTICES 24
-		Vertex verticesbox[G_BOX_VERTICES];
-		verticesbox[0].position = { -1.000000, 1.000000, 1.000000 };
-		verticesbox[0].normal = { 0.0000, 1.0000, 0.0000 };
-
-		verticesbox[1].position = { -1.000000, 1.000000, - 1.000000 };
-		verticesbox[1].normal = { 0.0000, 1.0000, 0.0000 };
-
-		verticesbox[2].position = { 1.000000, 1.000000, 1.000000 };
-		verticesbox[2].normal = { 0.0000, 1.0000, 0.0000 };
-
-		verticesbox[3].position = { -1.000000, - 1.000000, - 1.000000 };
-		verticesbox[3].normal = { 0.0000, 0.0000, - 1.0000 };
-
-		verticesbox[4].position = { 1.000000, - 1.000000, - 1.000000 };
-		verticesbox[4].normal = { 0.0000, 0.0000, - 1.0000 };
-
-		verticesbox[5].position = { -1.000000, 1.000000, - 1.000000 };
-		verticesbox[5].normal = { 0.0000, 0.0000, - 1.0000 };
-
-		verticesbox[6].position = { 1.000000, - 1.000000, - 1.000000 };
-		verticesbox[6].normal = { 1.0000, 0.0000, 0.0000 };
-
-		verticesbox[7].position = { 1.000000, - 1.000000, 1.00000 };
-		verticesbox[7].normal = { 1.0000, 0.0000 ,0.0000 };
-
-		verticesbox[8].position = { 1.000000, 1.000000, - 1.000000 };
-		verticesbox[8].normal = { 1.0000, 0.0000, 0.0000 };
-
-		verticesbox[9].position = { 1.000000, - 1.000000, 1.000000 };
-		verticesbox[9].normal = { 0.0000, - 1.0000, 0.0000 };
-
-		verticesbox[10].position = { 1.000000, - 1.000000, - 1.000000 };
-		verticesbox[10].normal = { 0.0000, - 1.0000, 0.0000 };
-
-		verticesbox[11].position = { -1.000000, - 1.000000, 1.000000 };
-		verticesbox[11].normal = { 0.0000, - 1.0000, 0.0000 };
-
-		verticesbox[12].position = { -1.000000, - 1.000000, 1.000000 };
-		verticesbox[12].normal = { -1.0000, 0.0000 ,0.0000 };
-
-		verticesbox[13].position = { -1.000000, - 1.000000, - 1.000000 };
-		verticesbox[13].normal = { -1.0000, 0.0000, 0.0000 };
-
-		verticesbox[14].position = { -1.000000, 1.000000, 1.000000 };
-		verticesbox[14].normal = { -1.0000, 0.0000, 0.0000 };
-
-		verticesbox[15].position = { 1.000000, - 1.000000, 1.00000 };
-		verticesbox[15].normal = { 0.0000, 0.0000 ,1.0000 };
-
-		verticesbox[16].position = { -1.000000, - 1.000000, 1.000000 };
-		verticesbox[16].normal = { 0.0000, 0.0000, 1.0000 };
-
-		verticesbox[17].position = { 1.000000, 1.000000, 1.000000 };
-		verticesbox[17].normal = { 0.0000, 0.0000, 1.0000 };
-
-		//new vertices:
-
-		verticesbox[18].position = { 1.000000, 1.000000, - 1.000000 };
-		verticesbox[18].normal = { 0.0000, 1.0000, 0.0000 };
-
-		verticesbox[19].position = { 1.000000, 1.000000, -1.000000 };
-		verticesbox[19].normal = { 0.0000, 0.0000 ,- 1.0000 };
-
-		verticesbox[20].position = { 1.000000, 1.000000, 1.000000 };
-		verticesbox[20].normal = { 1.0000, 0.0000, 0.0000 };
-
-		verticesbox[21].position = { -1.000000, - 1.000000, - 1.000000 };
-		verticesbox[21].normal = { 0.0000 ,- 1.0000, 0.0000 };
-
-		verticesbox[22].position = { -1.000000, 1.000000, - 1.000000 };
-		verticesbox[22].normal = { -1.0000, 0.0000, 0.0000 };
-
-		verticesbox[23].position = { -1.000000, 1.000000, 1.000000 };
-		verticesbox[23].normal = { 0.0000, 0.0000, 1.0000 };
-
-
-
-		mBufferUploader.Upload((D12Resource*)mVertexBuffer.GetAddressOf(), verticesbox, sizeof(Vertex) * G_BOX_VERTICES,
-			(D12CommandList*)mCommandList.GetAddressOf(), (D12CommandQueue*)mCommandQueue.GetAddressOf(), D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-					mVBView.BufferLocation = mVertexBuffer.Get()->GetGPUVirtualAddress();
-		mVBView.StrideInBytes = sizeof(Vertex);
-		mVBView.SizeInBytes = KBs(8);
-		*/
-
-
-/*
-
-verticesbox[1].position = { -1.000000, - 1.000000, 1.000000 };
-verticesbox[2].position = { -1.000000, 1.000000, - 1.00000 };
-verticesbox[3].position = { -1.000000, - 1.000000, - 1.000000 };
-
-verticesbox[4].position = { 1.000000, 1.000000, 1.000000 };
-//verticesbox[4].color = { 1.0f,0.0f,0.0f,1.0f };
-verticesbox[5].position = { 1.000000, - 1.000000, 1.000000 };
-//verticesbox[5].color = { 1.0f,0.0f,0.0f,1.0f };
-verticesbox[6].position = { 1.000000, 1.000000, - 1.00000 };
-//verticesbox[6].color = { 1.0f,0.0f,0.0f,1.0f };
-verticesbox[7].position = { 1.000000, - 1.000000, - 1.000000 };
-//verticesbox[7].color = { 1.0f,0.0f,0.0f,1.0f };
-*/
-
-
-/*
-verticesbox[0].position = { -1.0f,-1.0f,-1.0f }; //0
-verticesbox[0].color = { 0.0f,1.0f,0.0f,1.0f };
-verticesbox[1].position = { -1.0f,1.0f,-1.0f }; //1
-verticesbox[1].color = { 0.0f,1.0f,0.0f,1.0f };
-verticesbox[2].position = { 1.0f,-1.0f,-1.0f }; //2
-verticesbox[2].color = { 0.0f,1.0f,0.0f,1.0f };
-
-verticesbox[3].position = { -1.0f,1.0f,-1.0f };
-verticesbox[3].color = { 0.0f,1.0f,0.0f,1.0f };
-verticesbox[4].position = { 1.0f,1.0f,-1.0f };
-verticesbox[4].color = { 0.0f,1.0f,0.0f,1.0f };
-verticesbox[5].position = { 1.0f,-1.0f,-1.0f };
-verticesbox[5].color = { 0.0f,1.0f,0.0f,1.0f };
-
-
-verticesbox[6].position = { -1.0f,1.0f,1.0f };
-verticesbox[6].color = { 1.0f,0.0f,0.0f,1.0f };
-verticesbox[7].position = { -1.0f,-1.0f,1.0f };
-verticesbox[7].color = { 1.0f,1.0f,0.0f,1.0f };
-verticesbox[8].position = { 1.0f,1.0f,1.0f };
-verticesbox[8].color = { 1.0f,1.0f,0.0f,1.0f };
-
-verticesbox[9].position = { -1.0f,-1.0f,1.0f };
-verticesbox[9].color = { 1.0f,1.0f,0.0f,1.0f };
-verticesbox[10].position = { 1.0f,-1.0f,1.0f };
-verticesbox[10].color = { 1.0f,1.0f,0.0f,1.0f };
-verticesbox[11].position = { 1.0f,1.0f,1.0f };
-verticesbox[11].color = { 1.0f,1.0f,0.0f,1.0f };
-
-
-verticesbox[12].position = { -1.0f,-1.0f,1.0f };
-verticesbox[12].color = { 0.0f,0.0f,1.0f,1.0f };
-verticesbox[13].position = { -1.0f,1.0f,1.0f };
-verticesbox[13].color = { 0.0f,0.0f,1.0f,1.0f };
-verticesbox[14].position = { -1.0f,-1.0f,-1.0f };
-verticesbox[14].color = { 0.0f,0.0f,1.0f,1.0f };
-
-
-verticesbox[15].position = { -1.0f,1.0f,1.0f };
-verticesbox[15].color = { 0.0f,1.0f,1.0f,1.0f };
-verticesbox[16].position = { -1.0f,1.0f,-1.0f };
-verticesbox[16].color = { 0.0f,1.0f,1.0f,1.0f };
-verticesbox[17].position = { -1.0f,-1.0f,-1.0f };
-verticesbox[17].color = { 0.0f,1.0f,1.0f,1.0f };
-*/

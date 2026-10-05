@@ -63,19 +63,33 @@ namespace Engine {
 		pCommandList->ResetCommandList();
 	}
 
-	void BufferUploader::UploadTexture(ID3D12Device* pDevice, D12CommandList* pCommandList, D12CommandQueue* pCommandQueue, ID3D12Resource* pTexture, void* pixels, UINT width,UINT height)
+	
+
+	void BufferUploader::UploadTexture(ID3D12Device* pDevice, D12CommandList* pCommandList, D12CommandQueue* pCommandQueue, D12Resource* pTexture, void* pixels, UINT width,UINT height)
 	{
-		UINT64 uploadSize = 0;
+
 
 		
+
+		std::cout
+			<< "UploadSize = "
+			<< 512 * 512 * 4
+			<< std::endl;
+
+		std::cout
+			<< "MaxSize = "
+			<< mMaxSize
+			<< std::endl;
 
 		D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
 		UINT numRows;
 		UINT64 rowSize;
 		UINT64 uploadSize;
 
+		D3D12_RESOURCE_DESC resDesc = {};
+		resDesc = pTexture->Get()->GetDesc();
 		pDevice->GetCopyableFootprints(
-			&pTexture->GetDesc(),
+			&resDesc,
 			0,
 			1,
 			0,
@@ -84,53 +98,46 @@ namespace Engine {
 			&rowSize,
 			&uploadSize);
 		
-		D12Resource uploadBuffer;
+		std::cout
+			<< "Width: "
+			<< footprint.Footprint.Width
+			<< std::endl;
 
-		D3D12_HEAP_PROPERTIES heapProp = {};
-		heapProp.Type = D3D12_HEAP_TYPE_DEFAULT;
-		heapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-		heapProp.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-		heapProp.CreationNodeMask = 0;
-		heapProp.VisibleNodeMask = 0;
+		std::cout
+			<< "Height: "
+			<< footprint.Footprint.Height
+			<< std::endl;
 
-		D3D12_RESOURCE_DESC uploadDesc = {};
-
-		uploadDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		uploadDesc.Width = uploadSize;
-		uploadDesc.Height = 1;
-		uploadDesc.DepthOrArraySize = 1;
-		uploadDesc.MipLevels = 1;
-		uploadDesc.Format = DXGI_FORMAT_UNKNOWN;
-		uploadDesc.SampleDesc = { 1,0 };
-		uploadDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-
-		pDevice->CreateCommittedResource(
-			&heapProp,
-			D3D12_HEAP_FLAG_NONE,
-			&uploadDesc,
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(uploadBuffer.GetAddressOf()));
-
-		D3D12_SUBRESOURCE_DATA textureData = {};
-
-		textureData.pData = pixels;
-
-		textureData.RowPitch = width * 4;
-
-		textureData.SlicePitch = textureData.RowPitch * height;
-
+		std::cout
+			<< "RowPitch: "
+			<< footprint.Footprint.RowPitch
+			<< std::endl;
+	
 		
+		for (UINT row = 0; row < height; row++)
+		{
+			memcpy(
+				(char*)(mInternalMemory) + row * footprint.Footprint.RowPitch,
+				(char*)(pixels) + row * width * 4,
+				width * 4);
+		}
 
-		memcpy(mInternalMemory,pixels,width * height * 4);
+		D3D12_TEXTURE_COPY_LOCATION dstCP = {};
+		dstCP.pResource = pTexture->Get();
+		dstCP.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+		dstCP.SubresourceIndex = 0;
 
-
+		D3D12_TEXTURE_COPY_LOCATION srcCP = {};
+		srcCP.PlacedFootprint = footprint;
+		srcCP.pResource = mInternalBuffer.Get();
+		srcCP.SubresourceIndex = 0;
+		srcCP.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
 
 		D3D12_RESOURCE_BARRIER barrier = {};
 
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 
-		barrier.Transition.pResource = pTexture;
+		barrier.Transition.pResource = pTexture->Get();
 
 		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
 
@@ -141,17 +148,17 @@ namespace Engine {
 		pCommandList->GFXCmd()->ResourceBarrier(1,&barrier);
 
 
-		pCommandList->GFXCmd()->CopyTextureRegion();
+		pCommandList->GFXCmd()->CopyTextureRegion(&dstCP, 0, 0, 0, &srcCP, nullptr);
 
 
 
 		barrier = {};
 		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = pDestination->Get();
+		barrier.Transition.pResource = pTexture->Get();
 		barrier.Transition.Subresource = 0;
 		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-		barrier.Transition.StateAfter = (customState == D3D12_RESOURCE_STATE_COMMON ? D3D12_RESOURCE_STATE_COMMON : customState);
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
 
 		pCommandList->GFXCmd()->ResourceBarrier(1, &barrier);
 

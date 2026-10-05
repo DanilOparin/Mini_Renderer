@@ -53,7 +53,7 @@ namespace Engine {
 
 		RegisterClass(&wndClass);
 
-		mWindowHandle = CreateWindow(L"BaseWindowClass", L"YOUTUBE ENGINE WINDOW", WS_OVERLAPPEDWINDOW, 200, 200, mWidth, mHeight, 0, 0, 0, this); //refer back to the lParam stuff later
+		mWindowHandle = CreateWindow(L"BaseWindowClass", L"Mini_Renderer", WS_OVERLAPPEDWINDOW, 200, 200, mWidth, mHeight, 0, 0, 0, this); //refer back to the lParam stuff later
 
 		if (!mWindowHandle) {
 

@@ -13,7 +13,7 @@ namespace Engine {
 		void Initialize(ID3D12Device* pDevice, const UINT memoryallocation);
 
 		void Upload(D12Resource* pDestination, void* pSourceData, const UINT size, D12CommandList* pCommandList, D12CommandQueue* pCommandQueue, D3D12_RESOURCE_STATES customState = D3D12_RESOURCE_STATE_COMMON);
-		void UploadTexture(ID3D12Device* pDevice, D12CommandList* pCommandList, D12CommandQueue* pCommandQueue, ID3D12Resource* pTexture, void* pixels, UINT width, UINT height);
+		void UploadTexture(ID3D12Device* pDevice, D12CommandList* pCommandList, D12CommandQueue* pCommandQueue, D12Resource* pTexture, void* pixels, UINT width, UINT height);
 	
 
 		void Release();
