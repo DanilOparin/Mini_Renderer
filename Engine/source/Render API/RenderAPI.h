@@ -32,9 +32,18 @@ namespace Engine {
 
 		void Release();
 
+		enum class RenderMode
+		{
+			Deffered,
+			Forward
+		};
+
 	private:
 		ModelLoaderApi mModelLoader;
 	private:
+		RenderMode mRenderMode;
+		bool DefferedRendering;
+		bool ForwardRendering;
 		D12Device mDevice;
 		D12CommandQueue mCommandQueue;
 		D12CommandList mCommandList;
@@ -51,9 +60,13 @@ namespace Engine {
 		D12PipelineState mDeferredPipeline;
 		D12PipelineState mDeferredPixelPipeline;
 		D12DescriptorHeap mDeferredRenderTargetsDescHeap;
+		D12DescriptorHeap mForwardRenderTargetsDescHeap;
 		D12Resource mDeferredOutputTextures[3];
+		D12Resource mForwardOutputTextures[1];
 		
 		D12PipelineState mShadowMapPipeline;
+
+		D12PipelineState mForwardPipeline;
 
 
 		D12DescriptorHeap mCBSRVUAVDescHeap;

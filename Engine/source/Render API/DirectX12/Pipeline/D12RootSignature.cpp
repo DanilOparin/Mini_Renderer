@@ -52,6 +52,8 @@ namespace Engine {
 		rootParameter[4].Constants.RegisterSpace = 1;
 		rootParameter[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
+
+
 		
 
 

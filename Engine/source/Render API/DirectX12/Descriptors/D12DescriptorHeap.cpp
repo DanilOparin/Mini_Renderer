@@ -74,4 +74,23 @@ namespace Engine {
 
 		return handle;
 	}
+
+	void D12DescriptorHeap::Alloc(D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_desc_handle)
+	{
+
+		out_cpu_desc_handle->ptr = Get()->GetCPUDescriptorHandleForHeapStart().ptr + ((Get()->GetDesc().NumDescriptors - 1) * mIncrementSize);
+		out_gpu_desc_handle->ptr = Get()->GetGPUDescriptorHandleForHeapStart().ptr + ((Get()->GetDesc().NumDescriptors - 1) * mIncrementSize);
+	}
+
+	void* D12DescriptorHeap::Ptr()
+	{
+		return (void*)this;
+	}
+	/*void Free(D3D12_CPU_DESCRIPTOR_HANDLE out_cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE out_gpu_desc_handle)
+	{
+		int cpu_idx = (int)((out_cpu_desc_handle.ptr - HeapStartCpu.ptr) / HeapHandleIncrement);
+		int gpu_idx = (int)((out_gpu_desc_handle.ptr - HeapStartGpu.ptr) / HeapHandleIncrement);
+		IM_ASSERT(cpu_idx == gpu_idx);
+		FreeIndices.push_back(cpu_idx);
+	}*/
 }

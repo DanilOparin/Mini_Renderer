@@ -1,4 +1,6 @@
+
 #include "pch.h"
+
 #include "RenderAPI.h"
 
 
@@ -13,10 +15,9 @@
 #include "../Utilities/Utilities.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "../ThirdParty/stb_image.h"
+#include "stb_image.h"
 
-
-
+//extern stbi_uc* stbi_load(const char* filename, int* x, int* y, int* comp, int req_comp);
 
 
 
@@ -66,6 +67,8 @@ namespace Engine {
 
 		}
 
+		
+
 		/* LOAD OUR FBX MODELS */
 		{
 			std::vector<Vertex> vertices;
@@ -97,13 +100,43 @@ namespace Engine {
 
 		/* DESCRIPTOR HEAPS */
 		{
-			mDeferredRenderTargetsDescHeap.InitializeRTV(mDevice.Get(), 3); //The deferred pipeline uses 3 rendertagets currently
-			mDeferredRenderTargetsDescHeap->SetName(L"Deferred Descriptor heap");
-			mCBSRVUAVDescHeap.InitializeCBSRVUAV(mDevice.Get(), 6); //should hold our shadowmap stuff in the future, so should have another name eventually and bigger size
+			mDeferredRenderTargetsDescHeap.InitializeRTV(mDevice.Get(), 4); //The deferred and forward pipeline: 4 render targets(3 - deffer 1 - forward)
+			mDeferredRenderTargetsDescHeap->SetName(L"Render Target Descriptor heap");
+			mForwardRenderTargetsDescHeap.InitializeRTV(mDevice.Get(), 1); //The deferred and forward pipeline: 4 render targets(3 - deffer 1 - forward)
+			mForwardRenderTargetsDescHeap->SetName(L"Forward Render Target Descriptor heap");
+			mCBSRVUAVDescHeap.InitializeCBSRVUAV(mDevice.Get(), 7); //should hold our shadowmap stuff in the future, so should have another name eventually and bigger size
 			mCBSRVUAVDescHeap->SetName(L"Main CB, SRV, UAV Descriptor heap");
 
 			mDepthDescHeap.InitializeDepthHeap(mDevice.Get(), 2);
 			mDepthDescHeap->SetName(L"Depth descriptor heap");
+
+		}
+
+		//initialize imgui
+		{
+			// Setup Dear ImGui context
+			IMGUI_CHECKVERSION();
+			ImGui::CreateContext();
+			
+
+			ImGui::StyleColorsDark();
+			ImGui::GetStyle().ScaleAllSizes(1.5f);
+
+			ImGui_ImplWin32_Init(hwnd);
+
+			ImGui_ImplDX12_InitInfo init_info = {};
+			init_info.Device = mDevice.Get();
+			init_info.CommandQueue = mCommandQueue.Get();
+			init_info.NumFramesInFlight = 2;
+			init_info.RTVFormat = DXGI_FORMAT_R32G32B32A32_FLOAT; 
+			init_info.UserData = mCBSRVUAVDescHeap.Ptr();
+			init_info.SrvDescriptorHeap = mCBSRVUAVDescHeap.Get();
+			init_info.SrvDescriptorAllocFn = [](ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_handle) {
+				auto* heap = static_cast<D12DescriptorHeap*>(info->UserData);
+				return heap->Alloc(out_cpu_handle, out_gpu_handle); };
+			init_info.SrvDescriptorFreeFn = [](ImGui_ImplDX12_InitInfo*, D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle) { return ; };
+
+			ImGui_ImplDX12_Init(&init_info);
 
 		}
 		
@@ -140,6 +173,30 @@ namespace Engine {
 				name.append(std::to_wstring(i + 1));
 				mDeferredOutputTextures[i]->SetName(name.c_str());
 			}
+		}
+
+		//forward pipeline stuff
+		{
+			mForwardPipeline.InitializeForward(mDevice.Get());
+			mForwardPipeline->SetName(L"Forward pipeline PSO");
+
+			mForwardOutputTextures[0].InitializeAsRenderTarget(mDevice.Get(), width, height, DXGI_FORMAT_R32G32B32A32_FLOAT);
+
+			D3D12_RESOURCE_BARRIER barrier = {};
+			{
+				barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+				barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+				barrier.Transition.Subresource = 0;
+				barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+				barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+			}
+
+			barrier.Transition.pResource = mForwardOutputTextures[0].Get();
+			mCommandList.GFXCmd()->ResourceBarrier(1, &barrier);
+
+			mDevice->CreateRenderTargetView(mForwardOutputTextures[0].Get(), nullptr, mForwardRenderTargetsDescHeap.GetCPUHandle(0));
+		
+
 		}
 
 
@@ -270,7 +327,7 @@ namespace Engine {
 
 			mMaterialBuffers.emplace_back(D12Resource());
 			mMaterialBuffers[0].Initialize(mDevice.Get(), Utils::CalculateConstantbufferAlignment(sizeof(MaterialCelShader)), D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON);
-			mMaterialBuffers[0]->SetName(L"Material CB 1 skeleton");
+			mMaterialBuffers[0]->SetName(L"Material_1");
 
 			MaterialCelShader material;
 			material.diffuseAlbedo = { 1.0f,1.0f,1.0f,1.0f };
@@ -359,6 +416,9 @@ namespace Engine {
 			stbi_image_free((void*)texture);
 		}
 
+		DefferedRendering = true;
+		ForwardRendering = false;
+
 	}
 
 
@@ -367,6 +427,19 @@ namespace Engine {
 
 	void RenderAPI::UpdateDraw(const float ts)
 	{
+		
+		ImGui_ImplDX12_NewFrame();
+		ImGui_ImplWin32_NewFrame();
+		ImGui::NewFrame();
+		
+
+		ImGui::Begin("Hello, world!");
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::Checkbox("Forward Rendering", &ForwardRendering);
+		ImGui::Checkbox("Deffered Rendering", &DefferedRendering);
+		ImGui::End();
+
+		ImGui::Render();
 
 		Light currentFrameLights = mLights[0];
 		PassData passData;
@@ -461,17 +534,66 @@ namespace Engine {
 
 		//}
 
-		//Draw frame
+		mRenderMode = DefferedRendering ? Engine::RenderAPI::RenderMode::Deffered : Engine::RenderAPI::RenderMode::Forward;
+
+		switch (mRenderMode)
+		{
+		case Engine::RenderAPI::RenderMode::Deffered:
+			ForwardRendering = false;
+			break;
+		case Engine::RenderAPI::RenderMode::Forward:
+			DefferedRendering = false;
+			break;
+		default:
+			break;
+		}
+
+
+		if(ForwardRendering)
 		{
 			mCommandList.GFXCmd()->RSSetViewports(1, &mViewport[0]);
 			mCommandList.GFXCmd()->RSSetScissorRects(1, &mSRRect[0]);
 
-	
+			mCommandList.GFXCmd()->SetGraphicsRootSignature(mForwardPipeline.GetRS());
+			mCommandList.GFXCmd()->SetPipelineState(mForwardPipeline.Get());
+			mCommandList.GFXCmd()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			mCommandList.GFXCmd()->IASetVertexBuffers(0, 1, &mVBView);
+			mCommandList.GFXCmd()->IASetIndexBuffer(&mIBView);
+
+			const float clearColor[] = { 0.0f,0.0f,0.0f,1.0f };
+			D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle[1] = { mForwardRenderTargetsDescHeap.GetCPUHandle(0) };
+
+			D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = mDepthDescHeap.GetCPUHandle(0);
+
+			mCommandList.GFXCmd()->ClearRenderTargetView(mForwardRenderTargetsDescHeap.GetCPUHandle(0), clearColor, 0, 0);
+			mCommandList.GFXCmd()->ClearDepthStencilView(mDepthDescHeap.GetCPUHandle(0), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, 0);
+
+			mCommandList.GFXCmd()->OMSetRenderTargets(1, rtvHandle, false, &dsvHandle);
+
+			mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(0, mCBPassData.Get()->GetGPUVirtualAddress());
+			mCommandList.GFXCmd()->SetGraphicsRootDescriptorTable(3, mCBSRVUAVDescHeap.GetGPUHandle(0));
+
+			for (Render::MeshDrawData& mesh: mMeshes)
+			{
+				mCommandList.GFXCmd()->DrawIndexedInstanced(mesh.indexcount, 1, mesh.indexoffset, mesh.vertexoffset, 0);
+			}
+
+		}
+		else
+		{
+
+		}
+		{
+			mCommandList.GFXCmd()->RSSetViewports(1, &mViewport[0]);
+			mCommandList.GFXCmd()->RSSetScissorRects(1, &mSRRect[0]);
+
+			
 			mCommandList.GFXCmd()->SetGraphicsRootSignature(mDeferredPipeline.GetRS());
 			mCommandList.GFXCmd()->SetPipelineState(mDeferredPipeline.Get());
 			mCommandList.GFXCmd()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			mCommandList.GFXCmd()->IASetVertexBuffers(0, 1, &mVBView);
 			mCommandList.GFXCmd()->IASetIndexBuffer(&mIBView);
+			
 
 
 			const float clearColor[] = { 0.0f,0.0f,0.0f,0.0f };
@@ -539,6 +661,7 @@ namespace Engine {
 			
 				mCommandList.GFXCmd()->ClearRenderTargetView(rtvHandle, clearColor, 0, 0);
 				mCommandList.GFXCmd()->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
+				
 			}
 
 			mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(0, mCBPassData.Get()->GetGPUVirtualAddress());
@@ -551,7 +674,7 @@ namespace Engine {
 
 			mCommandList.GFXCmd()->DrawIndexedInstanced(3, 1, 0, 0, 0);
 
-
+			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.GFXCmd());
 			/* Transition the swapchain backbuffer into a present state */
 			{
 				barrier = {};
@@ -588,6 +711,9 @@ namespace Engine {
 
 	void RenderAPI::Release()
 	{
+		ImGui_ImplDX12_Shutdown();
+		ImGui_ImplWin32_Shutdown();
+		ImGui::DestroyContext();
 		
 		/* Fill out this stuff */
 
@@ -620,6 +746,7 @@ namespace Engine {
 		mDeferredPipeline.Release();
 		mDeferredPixelPipeline.Release();
 		mShadowMapPipeline.Release();
+		mForwardPipeline.Release();
 
 
 		mDeferredRenderTargetsDescHeap.Release();

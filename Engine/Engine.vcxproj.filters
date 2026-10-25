@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\ThirdParty">
+      <UniqueIdentifier>{528d541a-b435-4fba-bb93-f9a49c3f468e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ThirdParty\imgui">
+      <UniqueIdentifier>{e43bdf41-315a-4bb4-bde8-3a6fcdb03320}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\pch.h">
@@ -151,6 +157,27 @@
     </ClCompile>
     <ClCompile Include="source\ModelLoading\ModelLoaderApi.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ThirdParty\imgui-1.92.9b\backends\imgui_impl_dx12.cpp">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ThirdParty\imgui-1.92.9b\backends\imgui_impl_win32.cpp">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ThirdParty\imgui-1.92.9b\imgui.cpp">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ThirdParty\imgui-1.92.9b\imgui_draw.cpp">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ThirdParty\imgui-1.92.9b\imgui_demo.cpp">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ThirdParty\imgui-1.92.9b\imgui_tables.cpp">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ThirdParty\imgui-1.92.9b\imgui_widgets.cpp">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

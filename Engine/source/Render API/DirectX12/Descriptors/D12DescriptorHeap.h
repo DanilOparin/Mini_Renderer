@@ -17,6 +17,11 @@ namespace Engine {
 		D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle(const size_t idx = 0);
 
 		D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle(const size_t idx = 0);
+		void Alloc(
+			D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_desc_handle,
+			D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_desc_handle);
+
+		void* Ptr();
 
 	private:
 		
