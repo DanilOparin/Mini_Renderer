@@ -100,11 +100,11 @@ namespace Engine {
 
 		/* DESCRIPTOR HEAPS */
 		{
-			mDeferredRenderTargetsDescHeap.InitializeRTV(mDevice.Get(), 4); //The deferred and forward pipeline: 4 render targets(3 - deffer 1 - forward)
+			mDeferredRenderTargetsDescHeap.InitializeRTV(mDevice.Get(), 3); 
 			mDeferredRenderTargetsDescHeap->SetName(L"Render Target Descriptor heap");
-			mForwardRenderTargetsDescHeap.InitializeRTV(mDevice.Get(), 1); //The deferred and forward pipeline: 4 render targets(3 - deffer 1 - forward)
+			mForwardRenderTargetsDescHeap.InitializeRTV(mDevice.Get(), 1); 
 			mForwardRenderTargetsDescHeap->SetName(L"Forward Render Target Descriptor heap");
-			mCBSRVUAVDescHeap.InitializeCBSRVUAV(mDevice.Get(), 7); //should hold our shadowmap stuff in the future, so should have another name eventually and bigger size
+			mCBSRVUAVDescHeap.InitializeCBSRVUAV(mDevice.Get(), 8); //should hold our shadowmap stuff in the future, so should have another name eventually and bigger size
 			mCBSRVUAVDescHeap->SetName(L"Main CB, SRV, UAV Descriptor heap");
 
 			mDepthDescHeap.InitializeDepthHeap(mDevice.Get(), 2);
@@ -180,6 +180,9 @@ namespace Engine {
 			mForwardPipeline.InitializeForward(mDevice.Get());
 			mForwardPipeline->SetName(L"Forward pipeline PSO");
 
+			mForwardPixelPipeline.InitializePixelProcesForward(mDevice.Get());
+			mForwardPixelPipeline->SetName(L"Forward pixel pipeline PSO");
+
 			mForwardOutputTextures[0].InitializeAsRenderTarget(mDevice.Get(), width, height, DXGI_FORMAT_R32G32B32A32_FLOAT);
 
 			D3D12_RESOURCE_BARRIER barrier = {};
@@ -187,14 +190,16 @@ namespace Engine {
 				barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 				barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 				barrier.Transition.Subresource = 0;
+				barrier.Transition.pResource = mForwardOutputTextures[0].Get();
 				barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
 				barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 			}
 
-			barrier.Transition.pResource = mForwardOutputTextures[0].Get();
+			
 			mCommandList.GFXCmd()->ResourceBarrier(1, &barrier);
 
 			mDevice->CreateRenderTargetView(mForwardOutputTextures[0].Get(), nullptr, mForwardRenderTargetsDescHeap.GetCPUHandle(0));
+			mDevice->CreateShaderResourceView(mForwardOutputTextures[0].Get(), &mForwardOutputTextures[0].GetSRV(), mCBSRVUAVDescHeap.GetCPUHandle(6));
 		
 
 		}
@@ -416,8 +421,8 @@ namespace Engine {
 			stbi_image_free((void*)texture);
 		}
 
-		DefferedRendering = true;
-		ForwardRendering = false;
+		DefferedRendering = false;
+		ForwardRendering = true;
 
 	}
 
@@ -534,20 +539,7 @@ namespace Engine {
 
 		//}
 
-		mRenderMode = DefferedRendering ? Engine::RenderAPI::RenderMode::Deffered : Engine::RenderAPI::RenderMode::Forward;
-
-		switch (mRenderMode)
-		{
-		case Engine::RenderAPI::RenderMode::Deffered:
-			ForwardRendering = false;
-			break;
-		case Engine::RenderAPI::RenderMode::Forward:
-			DefferedRendering = false;
-			break;
-		default:
-			break;
-		}
-
+		
 
 		if(ForwardRendering)
 		{
@@ -565,12 +557,14 @@ namespace Engine {
 
 			D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = mDepthDescHeap.GetCPUHandle(0);
 
-			mCommandList.GFXCmd()->ClearRenderTargetView(mForwardRenderTargetsDescHeap.GetCPUHandle(0), clearColor, 0, 0);
-			mCommandList.GFXCmd()->ClearDepthStencilView(mDepthDescHeap.GetCPUHandle(0), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, 0);
+			mCommandList.GFXCmd()->ClearRenderTargetView(rtvHandle[0], clearColor, 0, 0);
+			mCommandList.GFXCmd()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, 0);
 
 			mCommandList.GFXCmd()->OMSetRenderTargets(1, rtvHandle, false, &dsvHandle);
 
 			mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(0, mCBPassData.Get()->GetGPUVirtualAddress());
+			mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(1, mObjTransforms[0].Get()->GetGPUVirtualAddress());
+			mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(2, mMaterialBuffers[0].Get()->GetGPUVirtualAddress());
 			mCommandList.GFXCmd()->SetGraphicsRootDescriptorTable(3, mCBSRVUAVDescHeap.GetGPUHandle(0));
 
 			for (Render::MeshDrawData& mesh: mMeshes)
@@ -578,62 +572,9 @@ namespace Engine {
 				mCommandList.GFXCmd()->DrawIndexedInstanced(mesh.indexcount, 1, mesh.indexoffset, mesh.vertexoffset, 0);
 			}
 
-		}
-		else
-		{
-
-		}
-		{
-			mCommandList.GFXCmd()->RSSetViewports(1, &mViewport[0]);
-			mCommandList.GFXCmd()->RSSetScissorRects(1, &mSRRect[0]);
-
-			
-			mCommandList.GFXCmd()->SetGraphicsRootSignature(mDeferredPipeline.GetRS());
-			mCommandList.GFXCmd()->SetPipelineState(mDeferredPipeline.Get());
-			mCommandList.GFXCmd()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			mCommandList.GFXCmd()->IASetVertexBuffers(0, 1, &mVBView);
-			mCommandList.GFXCmd()->IASetIndexBuffer(&mIBView);
-			
-
-
-			const float clearColor[] = { 0.0f,0.0f,0.0f,0.0f };
-
-			D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle[3] = {	mDeferredRenderTargetsDescHeap.GetCPUHandle(0),
-															mDeferredRenderTargetsDescHeap.GetCPUHandle(1),
-															mDeferredRenderTargetsDescHeap.GetCPUHandle(2) };
-
-			D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = mDepthDescHeap.GetCPUHandle(0);
-
-			mCommandList.GFXCmd()->ClearRenderTargetView(rtvHandle[0], clearColor, 0, 0);
-			mCommandList.GFXCmd()->ClearRenderTargetView(rtvHandle[1], clearColor, 0, 0);
-			mCommandList.GFXCmd()->ClearRenderTargetView(rtvHandle[2], clearColor, 0, 0);
-
-			mCommandList.GFXCmd()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, 0);
-			mCommandList.GFXCmd()->OMSetRenderTargets(3, rtvHandle, false, &dsvHandle);
-
-			mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(0, mCBPassData.Get()->GetGPUVirtualAddress());
-			mCommandList.GFXCmd()->SetGraphicsRootDescriptorTable(3, mCBSRVUAVDescHeap.GetGPUHandle(0));
-
-
-
-			
-			{
-
-				mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(1, mObjTransforms[0].Get()->GetGPUVirtualAddress());
-				mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(2, mMaterialBuffers[0].Get()->GetGPUVirtualAddress());
-
-				Render::MeshDrawData* drawdata = &mMeshes[0];
-
-				mCommandList.GFXCmd()->DrawIndexedInstanced(drawdata->indexcount, 1, drawdata->indexoffset, drawdata->vertexoffset, 0);
-
-			}
-
-			
-
-		
 			D3D12_RESOURCE_BARRIER barrier = {};
 
-		
+
 
 			/* Set our swapchain backbuffer in an rendertarget state*/
 			{
@@ -647,8 +588,8 @@ namespace Engine {
 				mCommandList.GFXCmd()->ResourceBarrier(1, &barrier);
 			}
 
-			mCommandList.GFXCmd()->SetGraphicsRootSignature(mDeferredPixelPipeline.GetRS());
-			mCommandList.GFXCmd()->SetPipelineState(mDeferredPixelPipeline.Get());
+			mCommandList.GFXCmd()->SetGraphicsRootSignature(mForwardPixelPipeline.GetRS());
+			mCommandList.GFXCmd()->SetPipelineState(mForwardPixelPipeline.Get());
 			mCommandList.GFXCmd()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			mCommandList.GFXCmd()->IASetVertexBuffers(0, 1, &mVBView);
 			mCommandList.GFXCmd()->IASetIndexBuffer(&mIBView);
@@ -658,10 +599,10 @@ namespace Engine {
 			{
 				const float clearColor[] = { 0.0f,0.0f,0.0f,1.0f };
 				D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = mSwapChain.GetCurrentRTVHandle();
-			
+
 				mCommandList.GFXCmd()->ClearRenderTargetView(rtvHandle, clearColor, 0, 0);
 				mCommandList.GFXCmd()->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
-				
+
 			}
 
 			mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(0, mCBPassData.Get()->GetGPUVirtualAddress());
@@ -669,7 +610,7 @@ namespace Engine {
 
 			unsigned int size[2] = { 1280,720 };
 
-			
+
 
 
 			mCommandList.GFXCmd()->DrawIndexedInstanced(3, 1, 0, 0, 0);
@@ -688,7 +629,7 @@ namespace Engine {
 				mCommandList.GFXCmd()->ResourceBarrier(1, &barrier);
 			}
 
-			
+
 			/* Close command list and execute + present */
 
 			{
@@ -705,7 +646,135 @@ namespace Engine {
 				mCommandList.ResetCommandList();
 			}
 
+
 		}
+		else
+		{
+			{
+				mCommandList.GFXCmd()->RSSetViewports(1, &mViewport[0]);
+				mCommandList.GFXCmd()->RSSetScissorRects(1, &mSRRect[0]);
+
+
+				mCommandList.GFXCmd()->SetGraphicsRootSignature(mDeferredPipeline.GetRS());
+				mCommandList.GFXCmd()->SetPipelineState(mDeferredPipeline.Get());
+				mCommandList.GFXCmd()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				mCommandList.GFXCmd()->IASetVertexBuffers(0, 1, &mVBView);
+				mCommandList.GFXCmd()->IASetIndexBuffer(&mIBView);
+
+
+
+				const float clearColor[] = { 0.0f,0.0f,0.0f,0.0f };
+
+				D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle[3] = { mDeferredRenderTargetsDescHeap.GetCPUHandle(0),
+																mDeferredRenderTargetsDescHeap.GetCPUHandle(1),
+																mDeferredRenderTargetsDescHeap.GetCPUHandle(2) };
+
+				D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = mDepthDescHeap.GetCPUHandle(0);
+
+				mCommandList.GFXCmd()->ClearRenderTargetView(rtvHandle[0], clearColor, 0, 0);
+				mCommandList.GFXCmd()->ClearRenderTargetView(rtvHandle[1], clearColor, 0, 0);
+				mCommandList.GFXCmd()->ClearRenderTargetView(rtvHandle[2], clearColor, 0, 0);
+
+				mCommandList.GFXCmd()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, 0);
+				mCommandList.GFXCmd()->OMSetRenderTargets(3, rtvHandle, false, &dsvHandle);
+
+				mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(0, mCBPassData.Get()->GetGPUVirtualAddress());
+				mCommandList.GFXCmd()->SetGraphicsRootDescriptorTable(3, mCBSRVUAVDescHeap.GetGPUHandle(0));
+
+
+
+
+				{
+
+					mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(1, mObjTransforms[0].Get()->GetGPUVirtualAddress());
+					mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(2, mMaterialBuffers[0].Get()->GetGPUVirtualAddress());
+
+					Render::MeshDrawData* drawdata = &mMeshes[0];
+
+					mCommandList.GFXCmd()->DrawIndexedInstanced(drawdata->indexcount, 1, drawdata->indexoffset, drawdata->vertexoffset, 0);
+
+				}
+
+
+
+
+				D3D12_RESOURCE_BARRIER barrier = {};
+
+
+
+				/* Set our swapchain backbuffer in an rendertarget state*/
+				{
+					barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+					barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+					barrier.Transition.pResource = mSwapChain.GetCurrentRenderTarget();
+					barrier.Transition.Subresource = 0;
+					barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+					barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+					mCommandList.GFXCmd()->ResourceBarrier(1, &barrier);
+				}
+
+				mCommandList.GFXCmd()->SetGraphicsRootSignature(mDeferredPixelPipeline.GetRS());
+				mCommandList.GFXCmd()->SetPipelineState(mDeferredPixelPipeline.Get());
+				mCommandList.GFXCmd()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				mCommandList.GFXCmd()->IASetVertexBuffers(0, 1, &mVBView);
+				mCommandList.GFXCmd()->IASetIndexBuffer(&mIBView);
+
+
+				/* clear the swapchain and depth buffer and bind it as output */
+				{
+					const float clearColor[] = { 0.0f,0.0f,0.0f,1.0f };
+					D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = mSwapChain.GetCurrentRTVHandle();
+
+					mCommandList.GFXCmd()->ClearRenderTargetView(rtvHandle, clearColor, 0, 0);
+					mCommandList.GFXCmd()->OMSetRenderTargets(1, &rtvHandle, false, nullptr);
+
+				}
+
+				mCommandList.GFXCmd()->SetGraphicsRootConstantBufferView(0, mCBPassData.Get()->GetGPUVirtualAddress());
+				mCommandList.GFXCmd()->SetGraphicsRootDescriptorTable(3, mCBSRVUAVDescHeap.GetGPUHandle(0));
+
+				unsigned int size[2] = { 1280,720 };
+
+
+
+
+				mCommandList.GFXCmd()->DrawIndexedInstanced(3, 1, 0, 0, 0);
+
+				ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), mCommandList.GFXCmd());
+				/* Transition the swapchain backbuffer into a present state */
+				{
+					barrier = {};
+					barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+					barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+					barrier.Transition.pResource = mSwapChain.GetCurrentRenderTarget();
+					barrier.Transition.Subresource = 0;
+					barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+					barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+
+					mCommandList.GFXCmd()->ResourceBarrier(1, &barrier);
+				}
+
+
+				/* Close command list and execute + present */
+
+				{
+					mCommandList.GFXCmd()->Close();
+					mCommandQueue.M_ExecuteCommandList(mCommandList.Get());
+
+					mSwapChain.Present();
+
+					while (mCommandQueue.GetFence()->GetCompletedValue() < mCommandQueue.M_GetCurrentFenceValue()) {
+
+						_mm_pause();
+					}
+
+					mCommandList.ResetCommandList();
+				}
+
+			}
+		}
+		
 		
 	}
 

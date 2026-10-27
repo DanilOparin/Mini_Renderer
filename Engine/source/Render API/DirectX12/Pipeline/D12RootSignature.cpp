@@ -37,7 +37,7 @@ namespace Engine {
 		range[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 		range[0].BaseShaderRegister = 0;
 		range[0].RegisterSpace = 0;
-		range[0].NumDescriptors = 6;
+		range[0].NumDescriptors = 8;
 		range[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 		rootParameter[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;

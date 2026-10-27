@@ -23,6 +23,8 @@ Texture2D gGDepthBuffer : register(t3);
 
 Texture2D gShadowMapBuffer : register(t4);
 
+
+
 SamplerState sPointClamp : register(s0,space0);
 SamplerState sLinearClamp : register(s1,space0);
 SamplerComparisonState sShadowCompare : register(s0, space1);

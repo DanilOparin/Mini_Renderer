@@ -67,6 +67,7 @@ namespace Engine {
 		D12PipelineState mShadowMapPipeline;
 
 		D12PipelineState mForwardPipeline;
+		D12PipelineState mForwardPixelPipeline;
 
 
 		D12DescriptorHeap mCBSRVUAVDescHeap;
